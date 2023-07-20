@@ -19,6 +19,7 @@ class VideoController extends Controller
     {
 
         return Video::limit($request->getLimit())
+            ->offset($request->getOffset())
             ->orderBy('created_at','desc')
             ->get()
             ->mapInto(VideoPreview::class);

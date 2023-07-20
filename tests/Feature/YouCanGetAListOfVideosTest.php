@@ -61,10 +61,66 @@ class YouCanGetAListOfVideosTest extends TestCase
         $this->getJson('/api/videos?limit=3')
             ->assertJsonCount(3);
     }
-    public function test_that_return_a_processable_when_the_limit_is_a_string()
+    public function test_that_by_default_only_return_30_videos()
     {
-        Video::factory()->count(4)->create();
-        $this->getJson('/api/videos?limit=unstring')
+        Video::factory()->count(100)->create();
+
+        $this->getJson('/api/videos')
+            ->assertJsonCount(30);
+    }
+    public function providerLimitInvaled():array
+    {
+        return [
+            'The min of videos that can be brought is 1'=>[3,'-1'],
+            'You can not get more than 50 videos'=>[53,'51'],
+            'You cannot pass a limit that is a string'=>[4,'unstring']
+        ];
+    }
+    /**
+    *@dataProvider providerLimitInvaled
+    **/
+    public function test_return_an_processable_if_there_is_error_in_the_limit(
+        int $numeroDeVIdeosACrear,
+        string $limit)
+    {
+        Video::factory()->count($numeroDeVIdeosACrear)->create();
+
+        $this->getJson(sprintf('/api/videos?limit=%s',$limit))
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function test_that_you_can_paginate_the_videos()
+    {
+        Video::factory()->count(9)->create();
+
+        $this->getJson('/api/videos?limit=5&page=2')
+            ->assertJsonCount(4);
+    }
+    public function test_that_the_default_page_is_the_first()
+    {
+        Video::factory()->count(9)->create();
+
+        $this->getJson('/api/videos?limit=5')
+            ->assertJsonCount(5);
+    }
+
+    public function providerOfPageInvalid():array
+    {
+        return [
+            'Cannot pass a string like Page'=>['unstring'],
+            'the page can not be less than one'=>['0']
+        ];
+    }
+
+    /**
+    * @dataProvider providerOfPageInvalid
+    **/
+    public function test_that_returns_an_processable_if_there_errors_in_the_page(
+        $invalidPage
+    )
+    {
+        Video::factory()->count(9)->create();
+        $this->getJson(sprintf('/api/videos?page=%s',$invalidPage))
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 }
