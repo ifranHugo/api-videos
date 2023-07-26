@@ -3,8 +3,8 @@
 declare(strict_types=1);
 namespace App\Http\Controllers;
 
-use App\Dtos\VideoPreview;
 use App\Http\Requests\ListadoDeVideosRequest;
+use App\Http\Resources\VideoPreview;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,11 +17,9 @@ class VideoController extends Controller
     }
     public function index(ListadoDeVideosRequest $request):mixed
     {
+        $videos=Video::ultimo($request->getLimit(), $request->getOffset())
+            ->get();
 
-        return Video::limit($request->getLimit())
-            ->offset($request->getOffset())
-            ->orderBy('created_at','desc')
-            ->get()
-            ->mapInto(VideoPreview::class);
+        return VideoPreview::collection($videos);
     }
 }
